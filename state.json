@@ -1280,7 +1280,7 @@
     "tex_files_dir": "sessions/20260502-094010-faa2/output/tex"
   },
   "delivery": {
-    "repo_url": null,
+    "repo_url": "https://github.com/Vizuara-AI-Lab/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10",
     "site_url": null,
     "recommended_venues": {
       "conferences": [
@@ -1338,14 +1338,51 @@
         }
       ]
     },
-    "student_email_draft": null,
+    "student_email_draft": {
+      "to": [
+        "crimsonsyrus000@gmail.com"
+      ],
+      "cc": [],
+      "subject": "Your paper draft: Reuse vs Adaptation: ImageNet \u2192 CIFAR-10",
+      "body_markdown": "Hi Vikash,\n\nYour paper draft is ready. Here is what is in the package.\n\n**Paper.** *Reuse versus Adaptation: Decomposing the ImageNet-to-CIFAR-10 Transfer Win for ResNet-18.* Attached as PDF; also at https://vizuara-ai-lab.github.io/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10/.\nPrimary result: linear-probe test top-1 accuracy = **0.8674 \u00b1 0.0016** across 3 seeds, with full fine-tuning reaching **0.9119 \u00b1 0.0025** and from-scratch reaching **0.7830 \u00b1 0.0244**. The strict ordering Scratch < Linear Probe < Fine-tune holds on every individual seed, not only on the mean.\n\n**Code and data.** Everything is in the repo: https://github.com/Vizuara-AI-Lab/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10.\nThe single command `python experiments/01-transfer-baselines/experiment.py` reproduces the full nine-training sweep on a 16 GB GPU. The script bootstraps its own venv and pulls CIFAR-10 from the `uoft-cs/cifar10` HuggingFace release.\n\n**Figures.** 5 figures (2 method diagrams + 3 result plots), all under `figures/` in the repo and inlined in the PDF.\n\n**Project site.** https://vizuara-ai-lab.github.io/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10/\nA single-page landing site with the abstract, big-metric callout, all five figures, a one-click BibTeX copy, and direct links back to the PDF and repo.\n\n**Peer review.** A sealed-PDF balanced/deep peer review is in the repo as `review.md`. The post-revision score is **8/10 (accept)** for a workshop track. Three medium-severity weaknesses remain (no external CIFAR-10 baseline, single backbone, no epoch-budget sweep) and are all explicit scope-of-work choices the paper itself flags as future work.\n\n**Where to submit.** Based on the abstract and the controlled-experiment framing, these venues look like good fits.\n\nConferences:\n- **CVPR Workshop on Computer Vision in the Wild** \u2014 Top-tier vision venue with multiple workshops on transfer learning, robustness, and small-data settings; the controlled three-condition decomposition is a natural fit for a workshop track that values empirical clarity over headline SOTA. Next deadline: 2026-03-15 (estimated).\n- **ICLR Tiny Papers / ICLR Reproducibility Workshop** \u2014 The Tiny Papers track explicitly targets workshop-grade contributions of exactly this size: 2-4 page papers with a single contribution; the paper's release package + per-seed table is exactly what the Reproducibility track was designed to surface. Next deadline: 2026-09-30 (estimated for next cycle).\n- **WACV** \u2014 Mid-tier vision conference with a strong \"applied / practical\" disposition; values reproducibility and well-controlled empirical studies more than the top-tier vision venues. The single-GPU reproducibility framing is a natural fit. Next deadline: 2026-07-15 (estimated).\n\nJournals:\n- **TMLR** \u2014 TMLR's explicit policy of accepting methodologically clean work without a \"novelty above SOTA\" bar is a strong match: this paper's contribution is empirical clarity on a known mechanism, not a new method. The Reproducibility certification is also available for the release package. Submission: Rolling.\n- **JOSS** \u2014 JOSS publishes short papers (~1000 words) accompanying open-source research software releases; the single-script + per-seed-metrics + LaTeX-source release would slot in cleanly as a companion artefact to the present paper, providing a citeable handle for the reproduction package. Submission: Rolling.\n\n**Next steps.**\n1. Read the PDF end-to-end and verify the numbers in Section 5 against your own records (and the `summary.json` under `experiments/01-transfer-baselines/`).\n2. Skim `review.md` for the three medium-severity weaknesses; decide whether to address any of them before submission.\n3. Pick a venue, then I can adapt formatting and length to its house style.\n4. Ready for a workshop submission as it stands; one more revision pass would lift it toward a main-track venue.\n\nIf you want any section rewritten, just reply with the specifics \u2014 section name and the change you want.\n\nBest,\nVikash Chandra Mishra\n",
+      "body_plaintext": "Hi Vikash,\n\nYour paper draft is ready. Here is what is in the package.\n\nPaper. Reuse versus Adaptation: Decomposing the ImageNet-to-CIFAR-10 Transfer Win for ResNet-18. Attached as PDF; also at https://vizuara-ai-lab.github.io/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10/.\nPrimary result: linear-probe test top-1 accuracy = 0.8674 \u00b1 0.0016 across 3 seeds, with full fine-tuning reaching 0.9119 \u00b1 0.0025 and from-scratch reaching 0.7830 \u00b1 0.0244. The strict ordering Scratch < Linear Probe < Fine-tune holds on every individual seed, not only on the mean.\n\nCode and data. Everything is in the repo: https://github.com/Vizuara-AI-Lab/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10.\nThe single command `python experiments/01-transfer-baselines/experiment.py` reproduces the full nine-training sweep on a 16 GB GPU. The script bootstraps its own venv and pulls CIFAR-10 from the `uoft-cs/cifar10` HuggingFace release.\n\nFigures. 5 figures (2 method diagrams + 3 result plots), all under `figures/` in the repo and inlined in the PDF.\n\nProject site. https://vizuara-ai-lab.github.io/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10/\nA single-page landing site with the abstract, big-metric callout, all five figures, a one-click BibTeX copy, and direct links back to the PDF and repo.\n\nPeer review. A sealed-PDF balanced/deep peer review is in the repo as `review.md`. The post-revision score is 8/10 (accept) for a workshop track. Three medium-severity weaknesses remain (no external CIFAR-10 baseline, single backbone, no epoch-budget sweep) and are all explicit scope-of-work choices the paper itself flags as future work.\n\nWhere to submit. Based on the abstract and the controlled-experiment framing, these venues look like good fits.\n\nConferences:\n- CVPR Workshop on Computer Vision in the Wild \u2014 Top-tier vision venue with multiple workshops on transfer learning, robustness, and small-data settings; the controlled three-condition decomposition is a natural fit for a workshop track that values empirical clarity over headline SOTA. Next deadline: 2026-03-15 (estimated).\n- ICLR Tiny Papers / ICLR Reproducibility Workshop \u2014 The Tiny Papers track explicitly targets workshop-grade contributions of exactly this size: 2-4 page papers with a single contribution; the paper's release package + per-seed table is exactly what the Reproducibility track was designed to surface. Next deadline: 2026-09-30 (estimated for next cycle).\n- WACV \u2014 Mid-tier vision conference with a strong \"applied / practical\" disposition; values reproducibility and well-controlled empirical studies more than the top-tier vision venues. The single-GPU reproducibility framing is a natural fit. Next deadline: 2026-07-15 (estimated).\n\nJournals:\n- TMLR \u2014 TMLR's explicit policy of accepting methodologically clean work without a \"novelty above SOTA\" bar is a strong match: this paper's contribution is empirical clarity on a known mechanism, not a new method. The Reproducibility certification is also available for the release package. Submission: Rolling.\n- JOSS \u2014 JOSS publishes short papers (~1000 words) accompanying open-source research software releases; the single-script + per-seed-metrics + LaTeX-source release would slot in cleanly as a companion artefact to the present paper, providing a citeable handle for the reproduction package. Submission: Rolling.\n\nNext steps.\n1. Read the PDF end-to-end and verify the numbers in Section 5 against your own records (and the `summary.json` under `experiments/01-transfer-baselines/`).\n2. Skim `review.md` for the three medium-severity weaknesses; decide whether to address any of them before submission.\n3. Pick a venue, then I can adapt formatting and length to its house style.\n4. Ready for a workshop submission as it stands; one more revision pass would lift it toward a main-track venue.\n\nIf you want any section rewritten, just reply with the specifics \u2014 section name and the change you want.\n\nBest,\nVikash Chandra Mishra\n",
+      "attachments": [
+        {
+          "name": "main.pdf",
+          "path": "sessions/20260502-094010-faa2/output/tex/main.pdf"
+        }
+      ],
+      "notes_for_student": [
+        "auto-review score: 8/10 (workshop accept)",
+        "unresolved high-severity issues: 0",
+        "Three remaining medium-severity items are scope-of-work choices acknowledged in the conclusion: external CIFAR-10 baseline, single backbone, single epoch budget."
+      ]
+    },
     "recommended_venue_shortlist": [
       "CVPR Workshop on Computer Vision in the Wild",
       "ICLR Tiny Papers / ICLR Reproducibility Workshop",
       "WACV",
       "TMLR",
       "JOSS"
-    ]
+    ],
+    "repo_owner": "Vizuara-AI-Lab",
+    "repo_name": "paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10",
+    "repo_visibility": "public",
+    "repo_status": "published",
+    "repo_status_reason": "pushed main; merge with auto-init LICENSE",
+    "website_dir": "sessions/20260502-094010-faa2/output/docs",
+    "website_files": [
+      "paper.pdf",
+      "style.css",
+      "index.html",
+      "figures/fig-main-bar.png",
+      "figures/fig-data-pipeline.png",
+      "figures/fig-method-overview.png",
+      "figures/fig-loss-curves.png",
+      "figures/fig-test-curves.png"
+    ],
+    "website_url": "https://vizuara-ai-lab.github.io/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10/",
+    "website_status": "published"
   },
   "review": {
     "review_iterations": [
@@ -1464,7 +1501,18 @@
         "exit_recommended": true
       }
     ],
-    "final_audit": null,
+    "final_audit": {
+      "ran": true,
+      "passed": true,
+      "score": 10,
+      "summary": "Issues require attention.",
+      "abstract_matches_results": true,
+      "figures_all_referenced": true,
+      "github_reachable": true,
+      "website_reachable": true,
+      "website_has_figures": true,
+      "issues": []
+    },
     "quality_iterations": [
       {
         "iter": 1,
@@ -1560,5 +1608,6 @@
       }
     ]
   },
-  "log": []
+  "log": [],
+  "status": "complete"
 }
