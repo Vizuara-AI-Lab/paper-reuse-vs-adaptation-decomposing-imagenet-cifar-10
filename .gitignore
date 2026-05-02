@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.synctex.gz
+*.toc
+.env*
+.venv/
+visual_audit/
+student/transcripts/

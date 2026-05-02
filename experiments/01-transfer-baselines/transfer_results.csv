@@ -1,0 +1,4 @@
+condition,mean_test_acc,std_test_acc,n_seeds
+scratch,0.7830,0.0244,3
+linear,0.8674,0.0016,3
+finetune,0.9119,0.0025,3

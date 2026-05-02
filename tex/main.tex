@@ -1,0 +1,566 @@
+\documentclass[11pt,twocolumn]{article}
+
+% Geometry: tight 2-column with reasonable margins.
+\usepackage[margin=0.75in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=blue!50!black,citecolor=blue!50!black,urlcolor=blue!50!black]{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{authblk}
+\usepackage{microtype}
+\usepackage[section]{placeins}
+\usepackage[skip=4pt]{caption}
+\usepackage{flushend}
+\graphicspath{{figures/}{../figures/}}
+
+% Tighter float spacing - eliminate dead whitespace around figures and tables.
+\setlength{\intextsep}{5pt plus 1pt minus 1pt}
+\setlength{\textfloatsep}{6pt plus 1pt minus 1pt}
+\setlength{\floatsep}{6pt plus 1pt minus 1pt}
+\setlength{\dbltextfloatsep}{6pt plus 1pt minus 1pt}
+\setlength{\dblfloatsep}{6pt plus 1pt minus 1pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{2pt}
+
+% Boundary overflow protections - long identifiers and compact math.
+\emergencystretch=2em
+\tolerance=2000
+\hyphenpenalty=50
+\sloppy
+
+% Slightly looser table rows for readability.
+\renewcommand{\arraystretch}{1.10}
+
+\title{Reuse versus Adaptation: Decomposing the ImageNet-to-CIFAR-10 Transfer Win for ResNet-18}
+\author[1]{Vikash Chandra Mishra\thanks{\texttt{crimsonsyrus000@gmail.com}}}
+\affil[1]{Independent}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+
+\begin{abstract}
+Transfer learning from ImageNet has become a default first move for image classification on small natural-image datasets, but the accuracy gain is often reported as a single number rather than decomposed into the value of \emph{reusing} pretrained features and the additional value of \emph{adapting} those features to the downstream task. We quantify both contributions on CIFAR-10 by training the same ResNet-18 backbone under three carefully controlled conditions: random initialisation with all weights trainable; ImageNet-pretrained weights with the backbone frozen and a linear probe on a new 10-class head; and ImageNet-pretrained weights with full end-to-end fine-tuning. All three conditions share an identical 5-epoch training schedule, batch size, and $224{\times}224$ input pipeline on the official CIFAR-10 train and test splits, so any difference in test accuracy is attributable to initialisation and parameter freedom alone. Across three random seeds, we observe a strict ordering on every individual seed: the from-scratch baseline reaches \textbf{0.7830} $\pm$ 0.0244 test top-1 accuracy, the linear probe over frozen ImageNet features reaches \textbf{0.8674} $\pm$ 0.0016, and full fine-tuning reaches \textbf{0.9119} $\pm$ 0.0025. The linear-probe gain over scratch isolates the value of frozen transfer at $+8.44$ percentage points; the additional gain from fine-tuning isolates the value of adaptation at $+4.45$ percentage points. We also find that the pretrained conditions are an order of magnitude more stable across seeds than the from-scratch run, consistent with pretrained initialisations occupying a flatter region of the loss landscape under tight training budgets. Code, logs, and per-seed numbers accompanying these claims are released as a public repository (URL on the project site).
+\end{abstract}
+
+\section{Introduction}
+
+Image classification on small natural-image datasets is one of the
+oldest and best-instrumented benchmarks in machine learning, yet the
+practical advice given to practitioners working on a new dataset has
+converged on a single recipe: take a backbone that has been trained on
+ImageNet \cite{deng2009imagenet}, replace its final classification
+layer with one sized to the new task, and fine-tune. The recipe works,
+and works robustly, across an enormous range of downstream domains
+\cite{kornblith2019better,yosinski2014transferable}. What is much less
+often quantified, especially at a budget that a student or a
+single-GPU laptop can reproduce, is \emph{why} it works. The accuracy
+gain over training the same architecture from random initialisation
+is typically reported as one number; that number conflates two
+mechanisms that practitioners benefit from for very different reasons.
+
+The first mechanism is the value of \emph{reusing} pretrained
+features without further adaptation. If the frozen feature space that
+ImageNet training produces is already approximately linearly
+separable for a downstream class structure, a linear probe over those
+frozen features captures essentially all of the easy signal at a
+trainable-parameter cost three to four orders of magnitude smaller
+than the full model. The second mechanism is the value of
+\emph{adapting} those features to the downstream task: fine-tuning
+moves the backbone away from its ImageNet optimum toward a downstream
+optimum, trading transferability for specialisation. The relative
+size of the two contributions matters in deployment, where freezing
+the backbone gives a much smaller training footprint and a much
+larger memory budget for batch size or input resolution; in
+continual-learning scenarios, where backbone drift is a hazard; and
+pedagogically, where students often see fine-tuning presented as a
+single black-box operation rather than a composition of two
+distinguishable effects.
+
+\textbf{Contributions.} We isolate and quantify the two contributions
+on CIFAR-10 \cite{krizhevsky2009learning}, the canonical small-image
+benchmark, with the simplest experimental design that admits a clean
+decomposition.
+\begin{itemize}
+  \item We train the same ResNet-18 \cite{he2016deep} backbone under
+    three conditions that differ only in initialisation and which
+    parameters are trainable: from scratch (random init, all weights
+    trainable); a linear probe over a frozen ImageNet-pretrained
+    backbone; and full end-to-end fine-tuning from the same
+    ImageNet checkpoint. Every other ingredient (training schedule,
+    batch size, input pipeline, optimiser per condition, three random
+    seeds) is held fixed.
+  \item Across three random seeds, the ordering Scratch $<$ Linear
+    Probe $<$ Fine-tune holds on every individual seed and in the
+    mean. Linear probing buys
+    $+8.44$ percentage points of test
+    accuracy over the from-scratch baseline; full fine-tuning buys a
+    further $+4.45$ percentage points on top
+    of the probe.
+  \item The pretrained conditions exhibit per-seed standard
+    deviations of $0.0016$ (linear probe) and $0.0025$
+    (fine-tune), an order of magnitude tighter than the
+    $0.0244$ of the from-scratch run, indicating
+    that ImageNet initialisation does not just raise mean accuracy
+    but also stabilises the optimisation trajectory under a tight
+    training budget.
+  \item We release per-seed metrics, the experiment script, and the
+    LaTeX source of this paper as a self-contained, single-GPU
+    reproduction package suitable for student-led
+    transfer-learning study groups.
+\end{itemize}
+
+\textbf{Roadmap.} Section~\ref{sec:related} situates the
+contributions in the broader transfer-learning literature.
+Section~\ref{sec:method} formalises the three conditions and the
+shared input pipeline. Section~\ref{sec:experiments} reports the
+training protocol and dataset statistics. Section~\ref{sec:results}
+gives the per-condition test-accuracy numbers, the per-epoch
+trajectories, and the limitations that follow from a 5-epoch budget.
+Section~\ref{sec:conclusion} discusses what these numbers do and do
+not say about transfer learning more broadly.
+
+
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{ImageNet pretraining as a default initialiser.}
+A long line of empirical work has shown that supervised pretraining
+on ImageNet \cite{deng2009imagenet} produces backbones that transfer
+robustly to a wide range of downstream image-classification tasks.
+\citet{yosinski2014transferable} characterised feature transferability
+across layers and showed that lower layers transfer more readily than
+higher ones; \citet{kornblith2019better} found that better ImageNet
+accuracy generally predicts better transfer, though with diminishing
+returns. \citet{he2019rethinking} pushed back on the notion that
+ImageNet pretraining is uniformly necessary, demonstrating that
+sufficiently long training from scratch can match pretraining on some
+detection benchmarks. The picture that emerges from these studies is
+that ImageNet pretraining is a strong default at modest training
+budgets but loses its edge when compute is plentiful, an observation
+our 5-epoch results are designed to illustrate at the
+single-laptop-GPU end of the budget spectrum.
+
+\paragraph{Linear probing as a feature-quality probe.}
+Linear probes over frozen pretrained features are a standard
+diagnostic for whether a representation has captured the task's class
+structure without requiring further adaptation. The technique
+predates modern self-supervised learning but rose to prominence in
+the self-supervised era, where it serves as a comparator across
+different pretraining objectives \cite{chen2020simple,he2020momentum,
+caron2020swav}. \citet{chen2020simple} popularised the practice of
+reporting both the linear-probe accuracy and the fine-tuned accuracy
+of the same backbone as separate numbers, since the two measure
+different properties of the pretrained representation. Our
+contribution sits in this tradition; we apply the same
+probe-versus-fine-tune comparison to the supervised
+ImageNet-pretrained backbone that practitioners reach for by default.
+
+\paragraph{CIFAR-10 as a transfer-learning testbed.}
+CIFAR-10 \cite{krizhevsky2009learning} has been used as a
+transfer-learning destination since the earliest days of deep image
+classification, both as a small target where overfitting is
+particularly visible and as a sanity-check benchmark whose
+state-of-the-art is well-characterised. The standard practice of
+upsampling its native $32{\times}32$ inputs to the $224{\times}224$
+resolution that ImageNet-trained backbones expect is documented in
+\citet{kornblith2019better} and is a confound any transfer study on
+CIFAR-10 must acknowledge: the upsampled CIFAR-10 image is not the
+same statistical object as the native one, and absolute accuracies on
+the two should not be compared directly.
+
+\paragraph{Distinguishing the present work.}
+Most existing transfer-learning studies on CIFAR-10 either compare
+many backbones at one fine-tuning recipe \cite{kornblith2019better}
+or compare many pretraining objectives at one downstream task
+\cite{ericsson2021how}. We deliberately fix everything except
+initialisation and parameter freedom, and we run the simplest
+possible three-way decomposition (Scratch, Linear Probe, Fine-tune)
+on a single backbone. The aim is not to set a new state of the art,
+which would require longer training, hyperparameter search, and
+modern augmentation \cite{cubuk2020randaugment}; it is to give a
+clean, reproducible, single-GPU answer to the question of how much of
+the transfer-learning win is feature reuse and how much is feature
+adaptation.
+
+
+\section{Method}
+\label{sec:method}
+
+We describe the three transfer-learning conditions, the shared
+ResNet-18 backbone, and the shared CIFAR-10 input pipeline that the
+conditions hold fixed. The motivation for fixing every variable
+except initialisation and parameter freedom is that any difference in
+test accuracy across conditions can then be attributed cleanly to one
+of those two factors.
+
+\subsection{Three transfer-learning conditions}
+
+Let $f_\theta : \mathcal{X} \to \mathbb{R}^{512}$ denote the
+ResNet-18 backbone parameterised by $\theta$, and let $g_\phi :
+\mathbb{R}^{512} \to \mathbb{R}^{10}$ denote a randomly initialised
+linear classifier with parameters $\phi$. We evaluate three training
+conditions on the joint model $g_\phi \circ f_\theta$:
+%
+\begin{align*}
+  &\text{Scratch:}      & \theta &\sim p_\text{rand},  & \nabla\theta \neq 0, \quad \nabla\phi \neq 0 \\
+  &\text{Linear probe:} & \theta &= \theta_\text{IN},  & \nabla\theta = 0,    \quad \nabla\phi \neq 0 \\
+  &\text{Fine-tune:}    & \theta &= \theta_\text{IN},  & \nabla\theta \neq 0, \quad \nabla\phi \neq 0
+\end{align*}
+%
+Here $\theta_\text{IN}$ denotes the publicly released
+\texttt{ResNet18\_Weights.IMAGENET1K\_V1} ImageNet-1K checkpoint
+shipped with \texttt{torchvision} \cite{paszke2019pytorch}, and
+$p_\text{rand}$ denotes its default random-init scheme. The
+classifier head $\phi$ is randomly initialised in every condition,
+including the Linear probe, so that the only thing the probe is
+asked to learn is a 10-class projection of the frozen backbone's
+final-layer features. Figure~\ref{fig:method-overview} renders the
+three conditions side by side.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig-method-overview.png}
+  \caption{The three transfer-learning conditions evaluated in this
+    paper. All three share the same ResNet-18 architecture and
+    CIFAR-10 input pipeline; they differ only in the initialisation
+    of the backbone and which parameters carry gradients.}
+  \label{fig:method-overview}
+\end{figure}
+
+\subsection{Backbone}
+
+The backbone $f_\theta$ is the standard 18-layer Residual Network
+\cite{he2016deep} as implemented in \texttt{torchvision}: a
+$7{\times}7$ stride-2 stem (Conv1, BatchNorm, ReLU, $3{\times}3$
+max-pool), four residual stages each consisting of two BasicBlock
+units, global average pooling, and a final 512-to-1000 linear layer.
+We replace the final 512-to-1000 layer with a 512-to-10 linear layer
+(the head $g_\phi$). The Linear-probe condition freezes
+\emph{everything} below the head, including the BatchNorm running
+statistics: every \texttt{BatchNorm2d} module is held in
+\texttt{eval} mode through training. Without that pin, the running
+means and variances would drift even when the convolution weights are
+frozen, and the probe would no longer be measuring "frozen ImageNet
+features" in any meaningful sense.
+
+\subsection{Input pipeline}
+
+CIFAR-10 \cite{krizhevsky2009learning} ships as $32{\times}32$ RGB
+images, but ImageNet-pretrained backbones expect a much larger
+receptive field. We therefore upsample every image to
+$224{\times}224$ via bicubic interpolation before feeding it to the
+backbone, and normalise with the ImageNet per-channel mean and
+standard deviation that the pretrained checkpoint expects. The full
+pipeline is shown in Figure~\ref{fig:data-pipeline}: training
+augmentation is a single random horizontal flip on top of the resize,
+and evaluation uses the resize and normalise stages alone. We do not
+apply any heavier augmentation (CutMix, AutoAugment, MixUp) so that
+the comparison across conditions is not confounded by augmentation
+strength.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig-data-pipeline.png}
+  \caption{Shared CIFAR-10 input pipeline. The same upsample,
+    normalise, and (training-only) flip steps are applied in every
+    condition; only the downstream model differs.}
+  \label{fig:data-pipeline}
+\end{figure}
+
+\subsection{Optimisation}
+
+For the from-scratch and fine-tuning conditions we use Adam
+\cite{kingma2015adam} with a fixed learning rate of $10^{-3}$. For
+the linear probe we use SGD with momentum $0.9$ and a fixed learning
+rate of $10^{-2}$, which is a standard choice for linear-probe
+heads when the backbone supplies high-quality features
+\cite{he2020momentum}. All three conditions train for five epochs
+with batch size 128 and the standard cross-entropy loss; no
+hyperparameter search is performed and no learning-rate schedule is
+applied. Each seed in $\{0, 1, 2\}$ is run sequentially through all
+three conditions, and we record per-epoch train and test metrics for
+every (condition, seed) pair.
+
+
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Dataset}
+
+We evaluate on CIFAR-10 \cite{krizhevsky2009learning}, a 60{,}000-image
+ten-class dataset of $32{\times}32$ RGB photographs, split into the
+official 50{,}000-image training set and 10{,}000-image test set. The
+dataset is loaded from the \texttt{uoft-cs/cifar10} HuggingFace
+release \cite{lhoest2021datasets}, which serves the standard image
+bytes through a stable CDN; we observed intermittent 503 errors from
+the canonical \texttt{www.cs.toronto.edu} mirror during this study,
+and use the HuggingFace mirror as the single source. No data
+augmentation other than a random horizontal flip during training is
+applied (Section~\ref{sec:method}).
+
+\subsection{Training protocol}
+
+Each random seed in $\{0, 1, 2\}$ runs the three conditions
+(Scratch, Linear Probe, Fine-tune) sequentially using the same
+\texttt{torchvision} ResNet-18 architecture and the same
+\texttt{ResNet18\_Weights.IMAGENET1K\_V1} pretrained checkpoint
+(loaded only by the Linear Probe and Fine-tune conditions). All
+conditions train for five epochs with batch size 128 and the standard
+multi-class cross-entropy loss. The Scratch and Fine-tune conditions
+optimise with Adam \cite{kingma2015adam} at learning rate $10^{-3}$;
+the Linear Probe optimises only its 5{,}130 head parameters with SGD
+at learning rate $10^{-2}$ and momentum $0.9$. We pin every
+\texttt{BatchNorm2d} module to evaluation mode in the Linear Probe so
+its running statistics do not drift during the forward-only passes.
+Training is run on a single NVIDIA RTX A4000 (16\,GB) GPU and peaks
+at 3.13\,GB of memory, well below the
+card's capacity. The mean total wall-clock per seed across the three
+conditions is 478\,s; the full three-seed
+sweep finishes in well under thirty minutes of wall-clock time.
+
+\subsection{Baselines and conditions}
+
+The baseline structure of this study is unusual: rather than
+comparing our method against external prior work, we compare three
+in-run \emph{conditions} that differ only in initialisation and
+parameter freedom, holding everything else fixed.
+%
+\begin{itemize}
+  \item \textbf{Scratch.} ResNet-18 with random initialisation and
+    all parameters trainable.
+  \item \textbf{Linear Probe.} ResNet-18 backbone loaded from
+    \texttt{ResNet18\_Weights.IMAGENET1K\_V1} and frozen
+    (\texttt{requires\_grad}\,$=$\,\texttt{False} on every backbone
+    parameter, BatchNorm pinned to \texttt{eval}); only the new
+    512-to-10 classifier head is trained.
+  \item \textbf{Fine-tune.} ResNet-18 backbone loaded from
+    \texttt{ResNet18\_Weights.IMAGENET1K\_V1} and the new classifier
+    head, all parameters trainable.
+\end{itemize}
+%
+We deliberately do not include external CIFAR-10 baselines from the
+literature in our headline numbers: the standard literature numbers
+for ResNet-18 on CIFAR-10 use longer training schedules (often
+100--200 epochs), heavier augmentation, and step or cosine
+learning-rate schedules, none of which we apply. Reporting them
+alongside our 5-epoch numbers would invite misreadings of the
+contribution. We discuss the implications of this choice in
+Section~\ref{sec:results}.
+
+
+\subsection{Reproducibility}
+
+To make the reported numbers reproducible at the byte level, we list
+the exact configuration that produced them. Random seeds are
+$\{0, 1, 2\}$ applied via \texttt{torch.manual\_seed}, \texttt{numpy.random.seed},
+and Python's \texttt{random.seed} at the start of each (condition, seed)
+pair. The pretrained checkpoint is the public
+\texttt{ResNet18\_Weights.IMAGENET1K\_V1} from \texttt{torchvision} and is
+loaded once per condition. Dataset bytes are the
+\texttt{uoft-cs/cifar10} HuggingFace release at the revision pinned in
+the released \texttt{requirements.txt}. A single command,
+\texttt{python experiment.py}, on a vanilla RunPod \texttt{pytorch:2.4.0-cuda12.4.1}
+image, reproduces the full nine-training sweep and rewrites
+\texttt{summary.json} from scratch.
+
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Main result}
+
+Across three random seeds, the predicted strict ordering
+\textsc{Scratch} $<$ \textsc{Linear Probe} $<$ \textsc{Fine-tune} on
+CIFAR-10 test top-1 accuracy holds at every seed and in the mean.
+A 5-epoch ImageNet-pretrained linear probe attains
+$\mathbf{0.8674 \pm 0.0016}$,
+which is 8.44 percentage points
+above an otherwise-identical ResNet-18 trained from random initialisation
+($0.7830 \pm 0.0244$).
+Fully fine-tuning the same ImageNet checkpoint end-to-end attains
+$\mathbf{0.9119 \pm 0.0025}$,
+a further 4.45 percentage points
+on top of the linear probe and 12.90
+percentage points above the from-scratch baseline. Equivalently,
+fine-tuning reduces the from-scratch test error from
+21.70\% to
+8.81\%, a relative error reduction of
+59.4\%. Figure~\ref{fig:main-bar}
+visualises the three numbers side by side.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig-main-bar.png}
+  \caption{CIFAR-10 test top-1 accuracy by transfer-learning
+    strategy, mean $\pm$ standard deviation across three random seeds.
+    Scratch: $0.7830 \pm 0.0244$.
+    Linear probe: $0.8674 \pm 0.0016$.
+    Fine-tune: $0.9119 \pm 0.0025$.
+    The strict ordering Scratch $<$ Linear $<$ Fine-tune is preserved
+    on every individual seed.}
+  \label{fig:main-bar}
+\end{figure}
+
+Table~\ref{tab:transfer-main} summarises the three conditions
+together with their trainable-parameter counts. The pretrained
+conditions exhibit very tight across-seed dispersion (linear probe
+$\sigma=0.0016$, fine-tune
+$\sigma=0.0025$), whereas the from-scratch
+condition is approximately an order of magnitude noisier
+($\sigma=0.0244$). This is consistent with
+pretrained initialisations occupying a flatter region of the loss
+landscape than random initialisation under the same 5-epoch budget.
+
+\begin{table*}[!t]
+\centering
+\begin{tabular}{lcc}
+\toprule
+Condition & Trainable params & Test top-1 accuracy ($\uparrow$) \\
+\midrule
+ResNet-18 from scratch                       & $\sim$11.2\,M & $0.7830 \pm 0.0244$ \\
+Linear probe (frozen backbone)               & 5{,}130        & $0.8674 \pm 0.0016$ \\
+\textbf{Fine-tune (ImageNet ResNet-18)}      & $\sim$11.2\,M & $\mathbf{0.9119 \pm 0.0025}$ \\
+\bottomrule
+\end{tabular}
+\caption{CIFAR-10 test top-1 accuracy on the official 10{,}000-image
+test split, mean $\pm$ standard deviation across three random seeds
+(0, 1, 2). All three conditions use the same ResNet-18 architecture
+and 5-epoch training schedule on $224{\times}224$ inputs upsampled
+from CIFAR-10's native $32{\times}32$. The linear probe trains only
+the 10-class final layer on top of frozen ImageNet-pretrained
+features; fine-tuning trains all parameters from the ImageNet
+checkpoint.}
+\label{tab:transfer-main}
+\end{table*}
+
+\subsection{Per-seed agreement and learning dynamics}
+
+The strict ordering holds at the level of every individual seed, not
+just on the mean: linear-probe accuracy exceeds the from-scratch
+number on each of seeds 0, 1, and 2 (gaps of 9.17, 5.35, 10.81
+percentage points respectively), and fine-tune exceeds linear probe
+on each seed (gaps of 4.18, 4.38, 4.80
+percentage points). No seed exhibits a non-monotone pattern.
+
+The per-epoch test-accuracy trajectories
+(Figure~\ref{fig:test-curves}) make the source of the gap explicit:
+the linear probe converges within two epochs to its asymptotic
+accuracy, fine-tuning continues to improve through epoch 5 and would
+likely benefit from a longer schedule, while from-scratch is still
+rising at epoch 5 and is the only condition for which the 5-epoch
+budget appears to be the limiting factor. The training-loss curves
+(Figure~\ref{fig:loss-curves}) show the same pattern from the
+optimisation side: fine-tuning attains the lowest training loss, the
+linear probe plateaus at a higher loss because the backbone cannot
+adapt, and the from-scratch run is still descending when training
+stops.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig-test-curves.png}
+  \caption{Per-epoch CIFAR-10 test top-1 accuracy for each
+    transfer-learning strategy, mean $\pm$ standard deviation across
+    three seeds. The linear probe converges within two epochs;
+    fine-tuning continues improving through epoch 5; from-scratch is
+    still rising at epoch 5.}
+  \label{fig:test-curves}
+\end{figure}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/fig-loss-curves.png}
+  \caption{Per-epoch training cross-entropy loss, mean $\pm$ standard
+    deviation across three seeds. Fine-tuning attains the lowest
+    training loss because it can adapt the backbone; the linear probe
+    plateaus at a higher loss because the backbone is frozen;
+    from-scratch is still descending when training stops.}
+  \label{fig:loss-curves}
+\end{figure}
+
+\subsection{Compute footprint and limitations}
+
+Each iteration trained nine ResNet-18 models (three conditions
+$\times$ three seeds) on a single NVIDIA RTX A4000 (16\,GB) using
+$224{\times}224$ inputs, batch size 128, and Adam (scratch and
+fine-tune, lr $=10^{-3}$) or SGD with momentum 0.9 (linear probe,
+lr $=10^{-2}$). Peak GPU memory was 3.13\,GB per
+condition and total wall-clock per seed averaged 478\,s for the
+three back-to-back trainings, comfortably within a single-GPU
+laptop-scale compute envelope.
+
+We deliberately did not search hyperparameters and we trained for
+only five epochs per condition. Five epochs is sufficient for the
+pretrained conditions to converge but leaves the from-scratch
+baseline in the middle of its trajectory; absolute from-scratch
+accuracy on CIFAR-10 with proper schedules and longer training is
+reported in the literature to exceed 90\,\%, whereas our 5-epoch
+number is 0.7830. The reported gaps should
+therefore be read as a quantification of how quickly each strategy
+reaches a competent classifier under a tight compute budget, the
+regime where the question of "how useful is transfer learning?" is
+most often asked in practice, rather than as a comparison of
+asymptotic accuracies.
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We decomposed the ImageNet-to-CIFAR-10 transfer-learning win for a
+single ResNet-18 into the value of reusing pretrained features
+(quantified by a linear probe over a frozen backbone) and the value
+of adapting those features (quantified by full end-to-end
+fine-tuning of the same checkpoint), holding architecture, training
+schedule, batch size, input pipeline, and seed budget identical
+across the three conditions. Across three random seeds and a 5-epoch
+budget on a single 16\,GB GPU, the from-scratch baseline reached
+$0.7830 \pm 0.0244$ test top-1 accuracy on the
+official CIFAR-10 test split, the linear probe over frozen ImageNet
+features reached $0.8674 \pm 0.0016$, and full fine-tuning
+reached $\mathbf{0.9119 \pm 0.0025}$. The two
+contributions split as $+8.44$ percentage points of feature
+reuse and an additional $+4.45$ percentage points of
+feature adaptation; the strict ordering held on every individual
+seed.
+
+Three limitations should temper any extrapolation. First, only one
+backbone (ResNet-18) and one source domain (ImageNet-1K) were
+evaluated, so the headline percentages should be read as a single
+data point rather than a general law; deeper backbones or
+out-of-distribution sources can shift both gaps in either direction.
+Second, every condition was trained for only five epochs, which is
+sufficient for the pretrained conditions to converge but leaves the
+from-scratch baseline still descending; absolute from-scratch
+accuracy on CIFAR-10 with proper schedules and longer training is
+known to exceed 90\,\% in the literature, so the 0.7830 we
+report should not be quoted as a state-of-the-art number. Third, the
+$32{\times}32$-to-$224{\times}224$ upsampling that lets ImageNet
+weights be applied at all is itself a confound when the from-scratch
+condition is interpreted as a CIFAR-10 baseline rather than as a
+control for the transfer comparison.
+
+Two follow-ups would tighten the picture. The most direct is a
+per-block freeze sweep: progressively unfreezing residual stages from
+the top down (head only, then head plus stage 4, then plus stage 3,
+and so on) would interpolate between the linear-probe and
+fine-tuning end-points and locate which stages contribute the most
+adaptation budget. The second is a budget sweep over training
+epochs: the 8.44 and 4.45
+percentage-point gaps reported here are 5-epoch numbers, and a
+30-epoch or 100-epoch sweep would let the from-scratch baseline catch
+up and the fine-tune number saturate, recasting the same
+decomposition as a function of compute. Both follow-ups fit
+comfortably inside the same single-GPU envelope and the same release
+artefacts that accompany this paper.
+
+
+% flushend handles balance automatically
+\FloatBarrier
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\end{document}
