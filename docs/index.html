@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reuse versus Adaptation: Decomposing the ImageNet-to-CIFAR-10 Transfer Win for ResNet-18</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topnav">
+  <span class="brand">Reuse vs Adaptation</span>
+  <nav>
+    <a href="#abstract">01 Abstract</a>
+    <a href="#contributions">02 Contributions</a>
+    <a href="#method">03 Method</a>
+    <a href="#results">04 Results</a>
+    <a href="#context">05 Context</a>
+    <a href="#next">06 Where to go next</a>
+    <a href="#cite">07 Cite</a>
+  </nav>
+  <div class="right">
+    <a class="pill primary" href="paper.pdf">Paper (PDF)</a>
+    <a class="pill" href="https://github.com/Vizuara-AI-Lab/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10">Code</a>
+  </div>
+</header>
+
+<main>
+
+<section class="hero">
+  <p class="eyebrow">computer vision · transfer learning · reproducibility</p>
+  <h1 class="hero-title">Reuse versus Adaptation: Decomposing the ImageNet-to-CIFAR-10 Transfer Win for ResNet-18</h1>
+  <p class="lede">A controlled three-condition decomposition of the ImageNet-to-CIFAR-10 transfer-learning win for ResNet-18: how much of the gain comes from <strong>reusing</strong> pretrained features and how much from <strong>adapting</strong> them.</p>
+
+  <dl class="metadata-grid">
+    <div><dt>Author</dt><dd>Vikash Chandra Mishra</dd></div>
+    <div><dt>Primary metric</dt><dd>Linear-probe test top-1 accuracy</dd></div>
+    <div><dt>Result</dt><dd><strong>0.8674 ± 0.0016</strong></dd></div>
+    <div><dt>Seeds</dt><dd>3</dd></div>
+    <div><dt>Model</dt><dd>ResNet-18 (~11.2 M params)</dd></div>
+    <div><dt>Dataset</dt><dd>CIFAR-10</dd></div>
+    <div><dt>Train images</dt><dd>50,000</dd></div>
+    <div><dt>Test images</dt><dd>10,000</dd></div>
+    <div><dt>License</dt><dd>MIT (paper); MIT (CIFAR-10 image set per HuggingFace card)</dd></div>
+  </dl>
+</section>
+
+<section id="abstract">
+  <h2><span class="section-num">01</span>Abstract</h2>
+  <p>Transfer learning from ImageNet has become a default first move for image classification on small natural-image datasets, but the accuracy gain is often reported as a single number rather than decomposed into the value of <em>reusing</em> pretrained features and the additional value of <em>adapting</em> those features to the downstream task. We quantify both contributions on CIFAR-10 by training the same ResNet-18 backbone under three carefully controlled conditions: random initialisation with all weights trainable; ImageNet-pretrained weights with the backbone frozen and a linear probe on a new 10-class head; and ImageNet-pretrained weights with full end-to-end fine-tuning. All three conditions share an identical 5-epoch training schedule, batch size, and 224×224 input pipeline on the official CIFAR-10 train and test splits, so any difference in test accuracy is attributable to initialisation and parameter freedom alone. Across three random seeds, we observe a strict ordering on every individual seed: the from-scratch baseline reaches <strong>0.7830</strong> ± 0.0244 test top-1 accuracy, the linear probe over frozen ImageNet features reaches <strong>0.8674</strong> ± 0.0016, and full fine-tuning reaches <strong>0.9119</strong> ± 0.0025. The linear-probe gain over scratch isolates the value of frozen transfer at +8.44 percentage points; the additional gain from fine-tuning isolates the value of adaptation at +4.45 percentage points. We also find that the pretrained conditions are an order of magnitude more stable across seeds than the from-scratch run, consistent with pretrained initialisations occupying a flatter region of the loss landscape under tight training budgets. Code, logs, and per-seed numbers accompanying these claims are released as a public repository (URL on the project site).</p>
+</section>
+
+<section id="contributions">
+  <h2><span class="section-num">02</span>Contributions</h2>
+  <div class="card-grid">
+    <div class="feature-card"><span class="num">01</span><h3>Three matched conditions</h3><p>Same backbone, same schedule, same input pipeline. Only initialisation and parameter freedom vary, so accuracy gaps decompose cleanly.</p></div>
+    <div class="feature-card"><span class="num">02</span><h3>Per-seed agreement</h3><p>Strict ordering Scratch &lt; Linear Probe &lt; Fine-tune holds on every individual seed, not only on the mean.</p></div>
+    <div class="feature-card"><span class="num">03</span><h3>Single-GPU reproducibility</h3><p>Nine ResNet-18 trainings finish in well under thirty minutes on a single 16 GB A4000.</p></div>
+  </div>
+</section>
+
+<section id="method">
+  <h2><span class="section-num">03</span>How it works</h2>
+  <p>We compare three transfer-learning strategies on a single ResNet-18 backbone, holding the training schedule, batch size, and CIFAR-10 input pipeline fixed across all three. <strong>Scratch</strong> trains a randomly initialised ResNet-18 end-to-end. <strong>Linear probe</strong> loads the public ImageNet-1K-pretrained ResNet-18, freezes the entire backbone (including BatchNorm running statistics), and trains only a new 10-class classifier head. <strong>Fine-tune</strong> loads the same pretrained checkpoint and lets every parameter update. Because the only differences between the three are initialisation and which parameters carry gradients, the per-condition test-accuracy gaps decompose the ImageNet-to-CIFAR-10 transfer-learning win into a feature-reuse term (Linear probe minus Scratch) and a feature-adaptation term (Fine-tune minus Linear probe).</p>
+
+  <figure class="wide-figure">
+  <img src="figures/fig-method-overview.png" alt="Three transfer-learning configurations under study">
+  <figcaption><strong>Figure 1</strong> &mdash; The three conditions evaluated in this paper, all sharing the same ResNet-18 backbone and CIFAR-10 input pipeline. Scratch: random initialisation, all weights trainable. Linear probe: ImageNet-pretrained backbone frozen, only the new 10-class head trainable. Fine-tune: ImageNet-pretrained backbone and head, all weights trainable.</figcaption>
+</figure>
+</section>
+
+<section id="results">
+  <h2><span class="section-num">04</span>What we found</h2>
+  <p>Across three random seeds, the strict ordering <strong>Scratch &lt; Linear Probe &lt; Fine-tune</strong> holds at every individual seed and in the mean. The from-scratch baseline reaches <strong>0.7830 ± 0.0244</strong>, the linear probe over frozen ImageNet features reaches <strong>0.8674 ± 0.0016</strong>, and full fine-tuning reaches <strong>0.9119 ± 0.0025</strong>. Linear probing buys +8.44 percentage points over the from-scratch baseline; full fine-tuning buys a further +4.45 percentage points on top. The pretrained conditions are an order of magnitude tighter across seeds than the from-scratch run.</p>
+
+  <div class="big-metric">
+    <div class="metric-cell"><span class="metric-label">Scratch</span><span class="metric-value">0.7830</span></div>
+    <div class="metric-cell"><span class="metric-label">Linear probe</span><span class="metric-value primary">0.8674</span></div>
+    <div class="metric-cell"><span class="metric-label">Fine-tune</span><span class="metric-value">0.9119</span></div>
+  </div>
+
+  <figure class="wide-figure">
+  <img src="figures/fig-main-bar.png" alt="Test top-1 accuracy by transfer-learning strategy">
+  <figcaption><strong>Figure 3</strong> &mdash; CIFAR-10 test top-1 accuracy of ResNet-18 under three transfer-learning strategies, mean +- standard deviation across three random seeds. Scratch: 0.7830 +- 0.0244. Linear probe: 0.8674 +- 0.0016. Fine-tune: 0.9119 +- 0.0025. The strict ordering Scratch < Linear < Fine-tune is preserved on every individual seed.</figcaption>
+</figure>
+  <figure class="wide-figure">
+  <img src="figures/fig-test-curves.png" alt="Per-epoch test top-1 accuracy">
+  <figcaption><strong>Figure 4</strong> &mdash; Per-epoch CIFAR-10 test top-1 accuracy for each transfer-learning strategy, mean +- standard deviation across three seeds. The linear probe converges within two epochs; fine-tuning is still improving at epoch 5; from-scratch is still rising at epoch 5 and is the only condition for which the 5-epoch budget appears to be the limiting factor.</figcaption>
+</figure>
+  <figure class="wide-figure">
+  <img src="figures/fig-loss-curves.png" alt="Per-epoch training cross-entropy loss">
+  <figcaption><strong>Figure 5</strong> &mdash; Per-epoch training cross-entropy loss, mean +- standard deviation across three seeds. Fine-tuning attains the lowest training loss because it can adapt the backbone; the linear probe plateaus at a higher loss because the backbone is frozen; from-scratch is still descending when training stops.</figcaption>
+</figure>
+</section>
+
+<section id="context">
+  <h2><span class="section-num">05</span>Context</h2>
+  <p>This is a workshop-grade single-GPU reproducibility study, not a state-of-the-art claim. We deliberately train for only five epochs and use only one backbone (ResNet-18) and one source domain (ImageNet-1K). The 5-epoch from-scratch number is below the literature ceiling for CIFAR-10 because longer schedules, hyperparameter search, and modern augmentation are explicitly out of scope. The reported gaps measure how quickly each strategy reaches a competent classifier under a tight compute budget, which is the regime in which the question of how useful transfer learning is is most often asked in practice.</p>
+</section>
+
+<section id="next">
+  <h2><span class="section-num">06</span>Where to go next</h2>
+  <div class="cta-grid">
+    <a class="cta-card" href="paper.pdf"><span class="num">01</span><h3>Read the paper</h3><p>Seven-page PDF with the controlled comparison.</p></a>
+    <a class="cta-card" href="https://github.com/Vizuara-AI-Lab/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10"><span class="num">02</span><h3>See the code</h3><p>Single self-contained Python script.</p></a>
+    <a class="cta-card" href="https://github.com/Vizuara-AI-Lab/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10/blob/main/experiments/01-transfer-baselines/experiment.py"><span class="num">03</span><h3>Reproduce</h3><p>One command on a 16 GB GPU; ~25 min per seed.</p></a>
+    <a class="cta-card" href="#cite"><span class="num">04</span><h3>Cite</h3><p>BibTeX one click away.</p></a>
+  </div>
+</section>
+
+<section id="cite">
+  <h2><span class="section-num">07</span>Cite</h2>
+  <div class="cite-block">
+    <button type="button" class="cite-copy-btn" data-target="cite-bibtex" aria-label="Copy BibTeX to clipboard">Copy</button>
+    <pre><code id="cite-bibtex">@misc{mishra2026reuse,
+  title  = {Reuse versus Adaptation: Decomposing the ImageNet-to-CIFAR-10 Transfer Win for ResNet-18},
+  author = {Vikash Chandra Mishra},
+  year   = {2026},
+  url    = {https://github.com/Vizuara-AI-Lab/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10}
+}</code></pre>
+  </div>
+  <script>
+    document.querySelectorAll('.cite-copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = document.getElementById(btn.dataset.target);
+        if (!target) return;
+        const text = target.innerText;
+        const finish = (ok) => {
+          const orig = 'Copy';
+          btn.textContent = ok ? 'Copied' : 'Failed';
+          btn.classList.toggle('is-copied', ok);
+          setTimeout(() => { btn.textContent = orig; btn.classList.remove('is-copied'); }, 1500);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(text).then(() => finish(true)).catch(() => finish(false));
+        } else {
+          const r = document.createRange(); r.selectNode(target);
+          const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+          let ok = false;
+          try { ok = document.execCommand('copy'); } catch(e) {}
+          sel.removeAllRanges();
+          finish(ok);
+        }
+      });
+    });
+  </script>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="cols">
+    <div>
+      <h4>Reuse versus Adaptation: Decomposing the ImageNet-to-CIFAR-10 Transfer Win for ResNet-18</h4>
+      <p class="copy">Reproducibility study, May 2026. Released under MIT.</p>
+    </div>
+    <div>
+      <h4>Navigate</h4>
+      <ul>
+        <li><a href="#abstract">Abstract</a></li>
+        <li><a href="#method">Method</a></li>
+        <li><a href="#results">Results</a></li>
+        <li><a href="#cite">Cite</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>External</h4>
+      <ul>
+        <li><a href="paper.pdf">Paper (PDF)</a></li>
+        <li><a href="https://github.com/Vizuara-AI-Lab/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10">GitHub repo</a></li>
+        <li><a href="https://github.com/Vizuara-AI-Lab/paper-reuse-vs-adaptation-decomposing-imagenet-cifar-10/blob/main/review.md">Peer review</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Authors</h4>
+      <p class="copy">© 2026 Vikash Chandra Mishra.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
